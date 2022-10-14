@@ -1,0 +1,6 @@
+.*.swp
+mounts/*
+!mounts/shared
+mounts/shared/*
+!mounts/shared/init.sh
+
