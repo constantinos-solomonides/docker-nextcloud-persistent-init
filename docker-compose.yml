@@ -1,0 +1,69 @@
+# TODO edit
+# Should contain:
+# * Nextcloud 
+#   * Expose
+#       * 80
+#       * 443
+#   * Mount
+#       * Conf folder
+#       * Storage folder
+# * Database
+#   * Mount
+#       * Contents folder
+
+version: '3'
+services:
+    nextcloud:
+        environment:
+             NEXTCLOUD_FQDN: lt.seeker-odysseas.net
+             MARIADB_ROOT_PASSWORD: "$MARIADB_ROOT_PASSWORD"
+        ports:
+            - 21543:443
+            - 21180:80
+        depends_on:
+            - database
+        image: nextcloud:latest
+        volumes:
+            - /var/nextcloud/data:/var/www/html/data
+            - /var/nextcloud/settings/html:/var/www/html
+            - /var/nextcloud/logs/nextcloud:/var/log/apache2
+            - /var/nextcloud/settings/etc/apache2:/etc/apache2
+            - /var/nextcloud/settings/certificates/nextcloud/:/etc/ssl/certs/nextcloud/
+        tty: true
+        stdin_open: true
+        networks:
+            - nextcloud
+        restart: unless-stopped
+    database:
+        environment:
+            MARIADB_ROOT_PASSWORD: "$MARIADB_ROOT_PASSWORD"
+        ports:
+            - 3406:3306
+        expose:
+            - 3306
+        build:
+            context: ./mariadb-docker/10.10/
+            dockerfile: ./Dockerfile
+        image: "database:latest"
+        volumes:
+            - /var/nextcloud/settings/db:/var/lib/mysql
+            - /var/nextcloud/logs/database:/var/log/mysql
+            - /var/nextcloud/settings/etc/mysql:/etc/mysql
+        tty: true
+        stdin_open: true
+        networks:
+            - nextcloud
+        restart: unless-stopped
+#    tester:
+#        environment:
+#            NEXTCLOUD_FQDN: lt.seeker-odysseas.net
+#            MARIADB_ROOT_PASSWORD: "$MARIADB_ROOT_PASSWORD"
+#        image: debian:latest
+#        entrypoint: sleep infinity
+#        tty: true
+#        stdin_open: true
+networks:
+    nextcloud: 
+        ipam:
+            config:
+                - subnet: 172.20.7.0/24
