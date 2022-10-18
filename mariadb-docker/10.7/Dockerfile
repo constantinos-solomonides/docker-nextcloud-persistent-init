@@ -73,7 +73,7 @@ RUN set -ex; \
 # bashbrew-architectures: amd64 arm64v8 ppc64le s390x
 #ARG MARIADB_VERSION=1:10.10.1+maria~ubu2204
 # Below is for raspberry pi 3
-ARG MARIADB_VERSION=1:10.6.7-2ubuntu1.1
+ARG MARIADB_VERSION=${MARIADB_VERSION:-1:10.6.7-2ubuntu1.1}
 ENV MARIADB_VERSION $MARIADB_VERSION
 # release-status:RC
 # (https://downloads.mariadb.org/rest-api/mariadb/)
