@@ -1,45 +1,116 @@
 services:
     nextcloud:
-        environment:
-             NEXTCLOUD_FQDN: lt.seeker-odysseas.net
-             MARIADB_ROOT_PASSWORD: "$MARIADB_ROOT_PASSWORD"
-        ports:
-            - 21543:443
-            - 21180:80
-        depends_on:
-            - database
-        image: nextcloud:latest
-        volumes:
-            - ${HOST_BASE}/nextcloud/data:${CONTAINER_BASE}/var/www/html/data
-            - ${HOST_BASE}/nextcloud/settings/html:${CONTAINER_BASE}/var/www/html
-            - ${HOST_BASE}/nextcloud/logs/nextcloud:${CONTAINER_BASE}/var/log/apache2
-            - ${HOST_BASE}/nextcloud/settings/etc/apache2:${CONTAINER_BASE}/etc/apache2
-            - ${HOST_BASE}/nextcloud/settings/certificates/nextcloud/:${CONTAINER_BASE}/etc/ssl/certs/nextcloud/
-        tty: true
-        stdin_open: true
-        networks:
-            - nextcloud
-        restart: unless-stopped
+      environment:
+        NEXTCLOUD_FQDN: "${NEXTCLOUD_FQDN}"
+        MARIADB_ROOT_PASSWORD: "${MARIADB_ROOT_PASSWORD}"
+        LOCAL_BASE_DIRECTORY: "${LOCAL_BASE_DIRECTORY}"
+        CONTAINER_BASE_DIRECTORY: "${CONTAINER_BASE_DIRECTORY}"
+        NEXTCLOUD_BASE_DIRECTORY: "${NEXTCLOUD_BASE_DIRECTORY}"
+        MOUNTS_DIRECTORY: "${MOUNTS_DIRECTORY}"
+      volumes:
+        - "${LOCAL_BASE_DIRECTORY}/${MOUNTS_DIRECTORY}/${NEXTCLOUD_BASE_DIRECTORY}/var/www/html/data:/var/www/html/data"
+        - "${LOCAL_BASE_DIRECTORY}/${MOUNTS_DIRECTORY}/${NEXTCLOUD_BASE_DIRECTORY}/var/www/html:/var/www/html"
+        - "${LOCAL_BASE_DIRECTORY}/${MOUNTS_DIRECTORY}/${NEXTCLOUD_BASE_DIRECTORY}/var/log/apache2:/var/log/apache2"
+        - "${LOCAL_BASE_DIRECTORY}/${MOUNTS_DIRECTORY}/${NEXTCLOUD_BASE_DIRECTORY}/etc/apache2:/etc/apache2"
+        - "${LOCAL_BASE_DIRECTORY}/${MOUNTS_DIRECTORY}/${NEXTCLOUD_BASE_DIRECTORY}/etc/ssl/certs/nextcloud:/etc/ssl/certs/nextcloud"
+      ports:
+        - 21543:443
+        - 21180:80
+      depends_on:
+        database:
+          condition: service_started
+        nextcloud_init:
+          condition: service_completed_successfully
+      image: nextcloud:latest
+      tty: true
+      stdin_open: true
+      networks:
+        - nextcloud
+        - default
+      restart: unless-stopped
+
+    # -------------------------
+    nextcloud_init:
+      environment:
+        NEXTCLOUD_FQDN: "any.seeker-odysseas.net"
+        MARIADB_ROOT_PASSWORD: "${MARIADB_ROOT_PASSWORD}"
+        LOCAL_BASE_DIRECTORY: "${LOCAL_BASE_DIRECTORY}"
+        CONTAINER_BASE_DIRECTORY: "${CONTAINER_BASE_DIRECTORY}"
+        NEXTCLOUD_BASE_DIRECTORY: "${NEXTCLOUD_BASE_DIRECTORY}"
+        MOUNTS_DIRECTORY: "${MOUNTS_DIRECTORY}"
+        SHARED_DIRECTORY: "${SHARED_DIRECTORY}"
+        DONE_FILE_NAME: "${DONE_FILE_NAME}"
+        NEXTCLOUD_DIRECTORIES: "${NEXTCLOUD_DIRECTORIES}"
+      volumes:
+        - "${LOCAL_BASE_DIRECTORY}/${MOUNTS_DIRECTORY}/${NEXTCLOUD_BASE_DIRECTORY}/var/www/html/data:${CONTAINER_BASE_DIRECTORY}/${NEXTCLOUD_BASE_DIRECTORY}/var/www/html/data"
+        - "${LOCAL_BASE_DIRECTORY}/${MOUNTS_DIRECTORY}/${NEXTCLOUD_BASE_DIRECTORY}/var/www/html:${CONTAINER_BASE_DIRECTORY}/${NEXTCLOUD_BASE_DIRECTORY}/var/www/html"
+        - "${LOCAL_BASE_DIRECTORY}/${MOUNTS_DIRECTORY}/${NEXTCLOUD_BASE_DIRECTORY}/var/log/apache2:${CONTAINER_BASE_DIRECTORY}/${NEXTCLOUD_BASE_DIRECTORY}/var/log/apache2"
+        - "${LOCAL_BASE_DIRECTORY}/${MOUNTS_DIRECTORY}/${NEXTCLOUD_BASE_DIRECTORY}/etc/apache2:${CONTAINER_BASE_DIRECTORY}/${NEXTCLOUD_BASE_DIRECTORY}/etc/apache2"
+        - "${LOCAL_BASE_DIRECTORY}/${MOUNTS_DIRECTORY}/${NEXTCLOUD_BASE_DIRECTORY}/etc/ssl/certs/nextcloud:${CONTAINER_BASE_DIRECTORY}/${NEXTCLOUD_BASE_DIRECTORY}/etc/ssl/certs/nextcloud"
+        - "${LOCAL_BASE_DIRECTORY}/${MOUNTS_DIRECTORY}/${SHARED_DIRECTORY}:${CONTAINER_BASE_DIRECTORY}/${SHARED_DIRECTORY}"
+      image: "nextcloud:latest"
+      tty: true
+      restart: no
+      networks:
+        - nextcloud
+      command: [ "bash", "${CONTAINER_BASE_DIRECTORY}/${SHARED_DIRECTORY}/init.sh", "-n" ]
+      depends_on:
+        database_init:
+          condition: service_completed_successfully
+
+    # -------------------------
     database:
-        environment:
-            MARIADB_ROOT_PASSWORD: "$MARIADB_ROOT_PASSWORD"
-        ports:
-            - 3406:3306
-        expose:
-            - 3306
-        build:
-            context: ./mariadb-docker/10.10/
-            dockerfile: ./Dockerfile
-        image: "database:latest"
-        volumes:
-            - ${HOST_BASE}/nextcloud/settings/db:${CONTAINER_BASE}/var/lib/mysql
-            - ${HOST_BASE}/nextcloud/logs/database:${CONTAINER_BASE}/var/log/mysql
-            - ${HOST_BASE}/nextcloud/settings/etc/mysql:${CONTAINER_BASE}/etc/mysql
-        tty: true
-        stdin_open: true
-        networks:
-            - nextcloud
-        restart: unless-stopped
+      environment:
+        MARIADB_ROOT_PASSWORD: "${MARIADB_ROOT_PASSWORD}"
+        LOCAL_BASE_DIRECTORY: "${LOCAL_BASE_DIRECTORY}"
+        CONTAINER_BASE_DIRECTORY: "${CONTAINER_BASE_DIRECTORY}"
+        MYSQL_BASE_DIRECTORY: "${MYSQL_BASE_DIRECTORY}"
+        MOUNTS_DIRECTORY: "${MOUNTS_DIRECTORY}"
+      volumes:
+        - "${LOCAL_BASE_DIRECTORY}/${MOUNTS_DIRECTORY}/${MYSQL_BASE_DIRECTORY}/var/lib/mysql:/var/lib/mysql"
+        - "${LOCAL_BASE_DIRECTORY}/${MOUNTS_DIRECTORY}/${MYSQL_BASE_DIRECTORY}/var/log/mysql:/var/log/mysql"
+        - "${LOCAL_BASE_DIRECTORY}/${MOUNTS_DIRECTORY}/${MYSQL_BASE_DIRECTORY}/etc/mysql:/etc/mysql"
+      depends_on:
+        database_init:
+          condition: service_completed_successfully
+      ports:
+          - 3407:3306
+      expose:
+          - 3306
+      image: "mariadb:10.10"
+      tty: true
+      stdin_open: true
+      networks:
+        - default
+        - nextcloud
+      restart: unless-stopped
+
+    # -------------------------
+    database_init:
+      environment:
+        MARIADB_ROOT_PASSWORD: "${MARIADB_ROOT_PASSWORD}"
+        NEXTCLOUD_ADMIN_USERNAME: "${NEXTCLOUD_ADMIN_USERNAME}"
+        NEXTCLOUD_ADMIN_PASSWORD: "${NEXTCLOUD_ADMIN_PASSWORD}"
+        LOCAL_BASE_DIRECTORY: "${LOCAL_BASE_DIRECTORY}"
+        CONTAINER_BASE_DIRECTORY: "${CONTAINER_BASE_DIRECTORY}"
+        MYSQL_BASE_DIRECTORY: "${MYSQL_BASE_DIRECTORY}"
+        MOUNTS_DIRECTORY: "${MOUNTS_DIRECTORY}"
+        SHARED_DIRECTORY: "${SHARED_DIRECTORY}"
+        DONE_FILE_NAME: "${DONE_FILE_NAME}"
+        MYSQL_DIRECTORIES: "${MYSQL_DIRECTORIES}"
+        SQL_INIT_FILENAME: "${SQL_INIT_FILENAME}"
+      volumes:
+        - "${LOCAL_BASE_DIRECTORY}/${MOUNTS_DIRECTORY}/${MYSQL_BASE_DIRECTORY}/var/lib/mysql:${CONTAINER_BASE_DIRECTORY}/${MYSQL_BASE_DIRECTORY}/var/lib/mysql"
+        - "${LOCAL_BASE_DIRECTORY}/${MOUNTS_DIRECTORY}/${MYSQL_BASE_DIRECTORY}/var/log/mysql:${CONTAINER_BASE_DIRECTORY}/${MYSQL_BASE_DIRECTORY}/var/log/mysql"
+        - "${LOCAL_BASE_DIRECTORY}/${MOUNTS_DIRECTORY}/${MYSQL_BASE_DIRECTORY}/etc/mysql:${CONTAINER_BASE_DIRECTORY}/${MYSQL_BASE_DIRECTORY}/etc/mysql"
+        - "${LOCAL_BASE_DIRECTORY}/${MOUNTS_DIRECTORY}/${SHARED_DIRECTORY}:${CONTAINER_BASE_DIRECTORY}/${SHARED_DIRECTORY}"
+
+      image: "mariadb:10.10"
+      tty: true
+      restart: no
+      networks:
+        - nextcloud
+      command: [ "bash", "${CONTAINER_BASE_DIRECTORY}/${SHARED_DIRECTORY}/init.sh", "-m" ]
 networks:
     nextcloud:
         ipam:
