@@ -5,6 +5,10 @@
 # [x]. Use shopt to define the init
 # [x]. Default to no action
 # [x]. Identify where files are stored for database and `rsync`' them
+# TODO
+# []. Setup certificates
+# []. Do configuration fixes recommended
+# []. Connect with postfix
 function init_mysql(){
     set -x
     DONE_FILE="${CONTAINER_BASE_DIRECTORY}/${SHARED_DIRECTORY}/mysql-${DONE_FILE_NAME}"
