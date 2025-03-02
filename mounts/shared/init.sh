@@ -6,6 +6,7 @@
 # [x]. Default to no action
 # [x]. Identify where files are stored for database and `rsync`' them
 # TODO
+# []. URGENT: Upgrade nextcloud version to latest
 # []. Setup certificates
 # []. Do configuration fixes recommended
 # []. Connect with postfix
