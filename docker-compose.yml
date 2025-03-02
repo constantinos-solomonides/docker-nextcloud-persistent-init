@@ -21,7 +21,7 @@ services:
           condition: service_started
         nextcloud_init:
           condition: service_completed_successfully
-      image: nextcloud:latest
+      image: "nextcloud:31.0.0"
       tty: true
       stdin_open: true
       networks:
@@ -33,7 +33,13 @@ services:
     nextcloud_init:
       environment:
         NEXTCLOUD_FQDN: "any.seeker-odysseas.net"
+        NEXTCLOUD_ADMIN_USER: "${NEXTCLOUD_ADMIN_USER}"
+        NEXTCLOUD_ADMIN_PASSWORD: "${NEXTCLOUD_ADMIN_PASSWORD}"
         MARIADB_ROOT_PASSWORD: "${MARIADB_ROOT_PASSWORD}"
+        MYSQL_USER: "${MYSQL_USER}"
+        MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
+        MYSQL_DATABASE: "${MYSQL_DATABASE}"
+        MYSQL_HOST: "${MYSQL_HOST}"
         LOCAL_BASE_DIRECTORY: "${LOCAL_BASE_DIRECTORY}"
         CONTAINER_BASE_DIRECTORY: "${CONTAINER_BASE_DIRECTORY}"
         NEXTCLOUD_BASE_DIRECTORY: "${NEXTCLOUD_BASE_DIRECTORY}"
@@ -48,7 +54,7 @@ services:
         - "${LOCAL_BASE_DIRECTORY}/${MOUNTS_DIRECTORY}/${NEXTCLOUD_BASE_DIRECTORY}/etc/apache2:${CONTAINER_BASE_DIRECTORY}/${NEXTCLOUD_BASE_DIRECTORY}/etc/apache2"
         - "${LOCAL_BASE_DIRECTORY}/${MOUNTS_DIRECTORY}/${NEXTCLOUD_BASE_DIRECTORY}/etc/ssl/certs/nextcloud:${CONTAINER_BASE_DIRECTORY}/${NEXTCLOUD_BASE_DIRECTORY}/etc/ssl/certs/nextcloud"
         - "${LOCAL_BASE_DIRECTORY}/${MOUNTS_DIRECTORY}/${SHARED_DIRECTORY}:${CONTAINER_BASE_DIRECTORY}/${SHARED_DIRECTORY}"
-      image: "nextcloud:latest"
+      image: "nextcloud:31.0.0"
       tty: true
       restart: no
       networks:
@@ -89,7 +95,7 @@ services:
     database_init:
       environment:
         MARIADB_ROOT_PASSWORD: "${MARIADB_ROOT_PASSWORD}"
-        NEXTCLOUD_ADMIN_USERNAME: "${NEXTCLOUD_ADMIN_USERNAME}"
+        NEXTCLOUD_ADMIN_USER: "${NEXTCLOUD_ADMIN_USER}"
         NEXTCLOUD_ADMIN_PASSWORD: "${NEXTCLOUD_ADMIN_PASSWORD}"
         LOCAL_BASE_DIRECTORY: "${LOCAL_BASE_DIRECTORY}"
         CONTAINER_BASE_DIRECTORY: "${CONTAINER_BASE_DIRECTORY}"
@@ -98,6 +104,10 @@ services:
         SHARED_DIRECTORY: "${SHARED_DIRECTORY}"
         DONE_FILE_NAME: "${DONE_FILE_NAME}"
         MYSQL_DIRECTORIES: "${MYSQL_DIRECTORIES}"
+        MYSQL_USER: "${MYSQL_USER}"
+        MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
+        MYSQL_DATABASE: "${MYSQL_DATABASE}"
+        MYSQL_HOST: "${MYSQL_HOST}"
         SQL_INIT_FILENAME: "${SQL_INIT_FILENAME}"
       volumes:
         - "${LOCAL_BASE_DIRECTORY}/${MOUNTS_DIRECTORY}/${MYSQL_BASE_DIRECTORY}/var/lib/mysql:${CONTAINER_BASE_DIRECTORY}/${MYSQL_BASE_DIRECTORY}/var/lib/mysql"
